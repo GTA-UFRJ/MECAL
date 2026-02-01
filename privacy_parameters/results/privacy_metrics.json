@@ -1,0 +1,88 @@
+{
+    "descrição_vs_classe": {
+        "entropy": {
+            "original_entropy": 9.964766651163181,
+            "mecal_entropy": 3.4647036937204123,
+            "entropy_reduction": 6.500062957442768,
+            "entropy_reduction_pct": 65.2304583237182
+        },
+        "uniqueness": {
+            "original": {
+                "total_records": 15187,
+                "unique_values": 2722,
+                "uniqueness_ratio": 0.1792322380983736
+            },
+            "mecal": {
+                "total_records": 15187,
+                "unique_values": 14,
+                "uniqueness_ratio": 0.0009218410482649635
+            },
+            "uniqueness_reduction": 2708
+        },
+        "mutual_information": {
+            "absolute": 2.401549596777932,
+            "relative_pct": 24.100409782276245,
+            "privacy_preserved_pct": 75.89959021772376
+        },
+        "equivalence_classes": {
+            "min_class_size": 4,
+            "max_class_size": 690,
+            "mean_class_size": 194.42857142857142,
+            "median_class_size": 185.0,
+            "num_categories": 14,
+            "smallest_cluster": {
+                "category": "SNMP",
+                "sample_count": 143,
+                "unique_originals": 4
+            },
+            "min_unique_cluster": {
+                "category": "SNMP",
+                "unique_originals": 4,
+                "sample_count": 143
+            }
+        }
+    },
+    "solução_vs_tipo_solução": {
+        "entropy": {
+            "original_entropy": 5.925923784319658,
+            "mecal_entropy": 3.160997389790035,
+            "entropy_reduction": 2.764926394529623,
+            "entropy_reduction_pct": 46.65814976975878
+        },
+        "uniqueness": {
+            "original": {
+                "total_records": 15187,
+                "unique_values": 946,
+                "uniqueness_ratio": 0.06229011654704682
+            },
+            "mecal": {
+                "total_records": 15187,
+                "unique_values": 20,
+                "uniqueness_ratio": 0.001316915783235662
+            },
+            "uniqueness_reduction": 926
+        },
+        "mutual_information": {
+            "absolute": 2.1910364284903086,
+            "relative_pct": 36.973753092942566,
+            "privacy_preserved_pct": 63.026246907057434
+        },
+        "equivalence_classes": {
+            "min_class_size": 1,
+            "max_class_size": 240,
+            "mean_class_size": 47.3,
+            "median_class_size": 13.5,
+            "num_categories": 20,
+            "smallest_cluster": {
+                "category": "Configure HTTP policies and HSTS",
+                "sample_count": 35,
+                "unique_originals": 4
+            },
+            "min_unique_cluster": {
+                "category": "Configure newer TLS version",
+                "unique_originals": 1,
+                "sample_count": 44
+            }
+        }
+    }
+}
