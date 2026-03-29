@@ -1,0 +1,43 @@
+{
+  "classe": {
+    "LibreSSL Vulnerabilities": 1650,
+    "End-of-Life Library Vulnerabilities": 1324,
+    "Local Privilege Escalation": 1240,
+    "TLS Vulnerability Descriptions": 1204,
+    "Tomcat Vulnerabilities": 979,
+    "Jetty Vulnerabilities": 906,
+    "SNMP Community String Vulnerabilities": 877,
+    "Expired TLS Certificates": 871,
+    "Lighttpd Vulnerabilities": 803,
+    "SQL Injection Vulnerabilities": 787,
+    "VMware Driver Vulnerabilities": 723,
+    "IIS Vulnerabilities": 708,
+    "Nginx Vulnerabilities": 680,
+    "TLS Certificate Vulnerabilities": 555,
+    "FreeBSD Kernel Vulnerabilities": 508,
+    "Sudo Policy Misconfigurations": 472,
+    "SUID Binary Misconfigurations": 459,
+    "DNS Vulnerability Descriptions": 441
+  },
+  "tipo_solução": {
+    "Disable Vulnerable Endpoints": 3208,
+    "Restrict Network Access": 1935,
+    "Update SSL Certificates": 1479,
+    "Apply Vendor Patches": 1165,
+    "Apply OS Security Patches": 1018,
+    "Configure Content Security": 780,
+    "Upgrade OpenSSL Packages": 723,
+    "Configure SSL Settings": 577,
+    "Prevent SQL Injection": 554,
+    "Disable Unnecessary Services": 532,
+    "Update End-of-Life Packages": 520,
+    "Apply HTML Encoding": 499,
+    "Restrict Sudo Permissions": 496,
+    "Update DNS Packages": 465,
+    "Update Vulnerable Dependencies": 330,
+    "Configure SNMP Security": 325,
+    "Implement Network Segmentation": 295,
+    "Update Linux Packages": 219,
+    "Restrict DNS Zone Transfers": 67
+  }
+}

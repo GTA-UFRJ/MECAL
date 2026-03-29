@@ -1,0 +1,20 @@
+services:
+
+  # -------------------------------------------------------------------
+  # Aplicação MECAL
+  # O Ollama roda nativamente no host — não é gerenciado por este compose.
+  # No Windows/macOS (Docker Desktop): host.docker.internal resolve
+  # automaticamente para o IP do host.
+  # No Linux: adicione extra_hosts conforme comentário abaixo.
+  # -------------------------------------------------------------------
+  mecal:
+    build: .
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./dataset:/app/dataset
+    # Linux apenas: descomente a linha abaixo
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "python preprocessing.py && python MECAL.py --device cpu"

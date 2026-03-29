@@ -8,6 +8,8 @@ clusterização semântica usando sentence embeddings e rotulagem automática vi
 import os
 import json
 import random
+import time
+from typing import Optional, List, Dict, Tuple
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -18,8 +20,9 @@ import requests
 # ==========================================
 # Configuração do Ollama
 # ==========================================
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.2"  # Modelo padrão, pode ser alterado
+_OLLAMA_BASE = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_URL = f"{_OLLAMA_BASE}/api/generate"
+OLLAMA_MODEL = "llama3.1"  # Modelo padrão, pode ser alterado
 MAX_SAMPLES_PER_CLUSTER = 5  # Número de amostras a enviar para a LLM
 
 
@@ -57,11 +60,11 @@ def query_ollama(prompt: str, model: str = OLLAMA_MODEL) -> str:
 
 def generate_cluster_label(
     cluster_id: int,
-    samples: list[str],
-    existing_labels: dict[int, str],
+    samples: List[str],
+    existing_labels: Dict[int, str],
     context: str,
     model: str = OLLAMA_MODEL
-) -> tuple[str, int | None]:
+) -> Tuple[str, Optional[int]]:
     """
     Gera um rótulo para um cluster usando a LLM.
     
@@ -171,10 +174,10 @@ Respond with ONLY the JSON, no additional text:"""
 
 
 def label_clusters_with_llm(
-    cluster_samples: dict[int, list[str]],
+    cluster_samples: Dict[int, List[str]],
     context: str,
     model: str = OLLAMA_MODEL
-) -> dict[int, str]:
+) -> Dict[int, str]:
     """
     Rotula todos os clusters usando a LLM.
     
@@ -190,11 +193,14 @@ def label_clusters_with_llm(
     
     labels = {}
     merge_mapping = {}  # cluster_id -> cluster_id_to_merge_with
+    llm_times = []  # tempo de cada chamada LLM
     
     # Ordenar clusters por tamanho (maiores primeiro para ter labels mais representativos)
     sorted_clusters = sorted(cluster_samples.keys(), 
                             key=lambda k: len(cluster_samples[k]), 
                             reverse=True)
+    
+    t_llm_total_start = time.perf_counter()
     
     for i, cluster_id in enumerate(sorted_clusters):
         samples = cluster_samples[cluster_id]
@@ -205,7 +211,8 @@ def label_clusters_with_llm(
         
         print(f"  [{i+1}/{len(sorted_clusters)}] Rotulando cluster {cluster_id} ({len(samples)} amostras)...")
         
-        # Gerar label
+        # Gerar label e medir tempo individual
+        t_call_start = time.perf_counter()
         label, merge_with = generate_cluster_label(
             cluster_id=cluster_id,
             samples=samples,
@@ -213,6 +220,9 @@ def label_clusters_with_llm(
             context=context,
             model=model
         )
+        t_call = time.perf_counter() - t_call_start
+        llm_times.append(t_call)
+        print(f"    Tempo da chamada LLM: {t_call:.2f}s")
         
         if merge_with is not None and merge_with in labels:
             # Registrar mesclagem
@@ -222,11 +232,20 @@ def label_clusters_with_llm(
         else:
             labels[cluster_id] = label
     
+    t_llm_total = time.perf_counter() - t_llm_total_start
+    
     # Estatísticas
     unique_labels = set(labels.values())
+    n_clusters = len(sorted_clusters)
     print(f"  Rotulagem concluída: {len(unique_labels)} rótulos únicos para {len(labels)} clusters")
     if merge_mapping:
         print(f"  Mesclagens realizadas: {len(merge_mapping)}")
+    if llm_times:
+        print(f"  Tempo LLM total: {t_llm_total:.2f}s | "
+              f"media/cluster: {sum(llm_times)/len(llm_times):.2f}s | "
+              f"max: {max(llm_times):.2f}s")
+    else:
+        print(f"  Tempo LLM total: {t_llm_total:.2f}s (sem chamadas bem-sucedidas)")
     
     return labels
 
@@ -241,13 +260,15 @@ def mecal_cluster(texts: list, n_clusters: int = 20, device: str = 'cuda:0') -> 
         device: Dispositivo para o modelo (cuda:0 ou cpu)
     
     Returns:
-        Tuple (clusters, cluster_samples) onde:
+        Tuple (clusters, cluster_samples, timing) onde:
         - clusters: array com o cluster de cada texto
         - cluster_samples: dict mapeando cluster_id -> lista de textos
+        - timing: dict com tempos de embedding e kmeans (em segundos)
     """
     print(f"  Gerando embeddings para {len(texts)} textos...")
     
     # Usar CPU se CUDA não estiver disponível
+    t_embed_start = time.perf_counter()
     try:
         model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
         embeddings = model.encode(texts, show_progress_bar=True, device=device)
@@ -255,19 +276,25 @@ def mecal_cluster(texts: list, n_clusters: int = 20, device: str = 'cuda:0') -> 
         print(f"  Aviso: Falha com {device}, usando CPU: {e}")
         model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
         embeddings = model.encode(texts, show_progress_bar=True, device='cpu')
+    t_embed = time.perf_counter() - t_embed_start
+    print(f"  Embeddings gerados em {t_embed:.2f}s ({len(texts)/t_embed:.0f} textos/s)")
     
     embeddings_array = np.array(embeddings)
     
     print(f"  Aplicando KMeans com {n_clusters} clusters...")
+    t_kmeans_start = time.perf_counter()
     kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init='auto')
     clusters = kmeans.fit_predict(embeddings_array)
+    t_kmeans = time.perf_counter() - t_kmeans_start
+    print(f"  KMeans concluído em {t_kmeans:.2f}s")
     
     # Agrupar textos por cluster para análise
     cluster_samples = {k: [] for k in range(n_clusters)}
     for i, text in enumerate(texts):
         cluster_samples[clusters[i].item()].append(text)
     
-    return clusters, cluster_samples
+    timing = {"embedding": t_embed, "kmeans": t_kmeans}
+    return clusters, cluster_samples, timing
 
 
 def apply_mecal(
@@ -290,9 +317,10 @@ def apply_mecal(
         n_clusters: Número inicial de clusters
     
     Returns:
-        DataFrame com colunas categorizadas
+        DataFrame com colunas categorizadas e dict de tempos.
     """
     df = df.copy()
+    timings = {}  # acumulador de tempos por etapa
     
     # ==========================================
     # MECAL para coluna 'descrição' -> 'classe'
@@ -300,15 +328,20 @@ def apply_mecal(
     print("\n[1/2] Processando coluna 'descrição'...")
     
     desc_texts = df['descrição'].fillna("").tolist()
-    clusters_desc, samples_desc = mecal_cluster(desc_texts, n_clusters=n_clusters, device=device)
+    t0 = time.perf_counter()
+    clusters_desc, samples_desc, timing_desc = mecal_cluster(desc_texts, n_clusters=n_clusters, device=device)
+    timings['desc_embedding'] = timing_desc['embedding']
+    timings['desc_kmeans']    = timing_desc['kmeans']
     
     # Rotulagem automática com LLM
     print("\n  Rotulagem automática para 'descrição':")
+    t_llm_desc = time.perf_counter()
     cluster_to_class_desc = label_clusters_with_llm(
         cluster_samples=samples_desc,
         context="vulnerability descriptions (describing security issues, CVEs, and software flaws)",
         model=ollama_model
     )
+    timings['desc_llm'] = time.perf_counter() - t_llm_desc
     
     df['classe'] = [cluster_to_class_desc[clusters_desc[i].item()] 
                    for i in range(len(desc_texts))]
@@ -321,28 +354,29 @@ def apply_mecal(
     print("\n[2/2] Processando coluna 'solução'...")
     
     sol_texts = df['solução'].fillna("").tolist()
-    clusters_sol, samples_sol = mecal_cluster(sol_texts, n_clusters=n_clusters, device=device)
+    clusters_sol, samples_sol, timing_sol = mecal_cluster(sol_texts, n_clusters=n_clusters, device=device)
+    timings['sol_embedding'] = timing_sol['embedding']
+    timings['sol_kmeans']    = timing_sol['kmeans']
     
     # Rotulagem automática com LLM
     print("\n  Rotulagem automática para 'solução':")
+    t_llm_sol = time.perf_counter()
     cluster_to_class_sol = label_clusters_with_llm(
         cluster_samples=samples_sol,
         context="solution recommendations (describing how to fix vulnerabilities, update packages, configure security)",
         model=ollama_model
     )
+    timings['sol_llm'] = time.perf_counter() - t_llm_sol
     
     df['tipo_solução'] = [cluster_to_class_sol[clusters_sol[i].item()] 
                          for i in range(len(sol_texts))]
     
     print(f"  Tipos de solução gerados: {df['tipo_solução'].nunique()} categorias únicas")
     
-    # Remover colunas originais de texto
+    # Remover apenas as colunas de texto original que foram substituídas pelas classes
     df = df.drop(columns=['descrição', 'solução'], errors='ignore')
     
-    # Remover coluna 'definition.name' se existir (também é texto identificador)
-    df = df.drop(columns=['definition.name'], errors='ignore')
-    
-    return df
+    return df, timings
 
 
 def run_mecal(
@@ -373,7 +407,7 @@ def run_mecal(
     # Verificar conexão com Ollama
     print(f"\nVerificando conexão com Ollama ({ollama_model})...")
     try:
-        test_response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        test_response = requests.get(f"{_OLLAMA_BASE}/api/tags", timeout=5)
         test_response.raise_for_status()
         available_models = [m["name"] for m in test_response.json().get("models", [])]
         print(f"  Ollama conectado! Modelos disponíveis: {available_models}")
@@ -389,7 +423,9 @@ def run_mecal(
     print(f"Shape inicial: {df.shape}")
     
     # Aplicar MECAL
-    df = apply_mecal(df, device=device, ollama_model=ollama_model, n_clusters=n_clusters)
+    t_total_start = time.perf_counter()
+    df, timings = apply_mecal(df, device=device, ollama_model=ollama_model, n_clusters=n_clusters)
+    t_total = time.perf_counter() - t_total_start
     
     print(f"\nShape final: {df.shape}")
     print(f"Colunas finais: {list(df.columns)}")
@@ -408,8 +444,33 @@ def run_mecal(
         json.dump(label_summary, f, indent=2, ensure_ascii=False)
     print(f"Resumo de labels salvo em: {labels_path}")
     
+    # ==========================================
+    # Sumário de tempos de execução
+    # ==========================================
+    t_embed_total = timings.get('desc_embedding', 0) + timings.get('sol_embedding', 0)
+    t_kmeans_total = timings.get('desc_kmeans', 0) + timings.get('sol_kmeans', 0)
+    t_llm_total = timings.get('desc_llm', 0) + timings.get('sol_llm', 0)
+    t_transformers_total = t_embed_total + t_kmeans_total
+    
+    print("\n" + "=" * 60)
+    print("  SUMARIO DE TEMPOS DE EXECUCAO")
     print("=" * 60)
-    print("MECAL concluído com sucesso!")
+    print(f"  Embeddings (sentence-transformers):")
+    print(f"    descrição:  {timings.get('desc_embedding', 0):7.2f}s")
+    print(f"    solução:    {timings.get('sol_embedding', 0):7.2f}s")
+    print(f"    subtotal:   {t_embed_total:7.2f}s")
+    print(f"  KMeans:")
+    print(f"    descrição:  {timings.get('desc_kmeans', 0):7.2f}s")
+    print(f"    solução:    {timings.get('sol_kmeans', 0):7.2f}s")
+    print(f"    subtotal:   {t_kmeans_total:7.2f}s")
+    print(f"  Transformers (embed + kmeans): {t_transformers_total:7.2f}s")
+    print(f"  LLM (rotulagem Ollama):")
+    print(f"    descrição:  {timings.get('desc_llm', 0):7.2f}s")
+    print(f"    solução:    {timings.get('sol_llm', 0):7.2f}s")
+    print(f"    subtotal:   {t_llm_total:7.2f}s")
+    print(f"  TOTAL pipeline:               {t_total:7.2f}s")
+    print("=" * 60)
+    print("MECAL concluido com sucesso!")
     print("=" * 60)
     
     return df
@@ -429,8 +490,8 @@ if __name__ == "__main__":
     
     this_dir = os.path.dirname(os.path.abspath(__file__))
     
-    input_path = os.path.join(this_dir, "datasets", "preprocessed.csv")
-    output_path = os.path.join(this_dir, "datasets", "after_MECAL.csv")
+    input_path = os.path.join(this_dir, "dataset", "preprocessed.csv")
+    output_path = os.path.join(this_dir, "dataset", "after_MECAL.csv")
     
     # Verificar se o arquivo de entrada existe
     if not os.path.exists(input_path):

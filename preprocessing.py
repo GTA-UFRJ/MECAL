@@ -12,7 +12,9 @@ def preprocess_dataset(input_path: str, output_path: str) -> pd.DataFrame:
     
     Renomeações:
     - definition.description -> descrição
-    - definition.solution -> solução
+    - definition.solution    -> solução
+    
+    Todas as demais colunas são preservadas.
     
     Args:
         input_path: Caminho do dataset original
@@ -24,14 +26,14 @@ def preprocess_dataset(input_path: str, output_path: str) -> pd.DataFrame:
     print(f"Lendo dataset de: {input_path}")
     df = pd.read_csv(input_path)
     print(f"Shape original: {df.shape}")
+    print(f"Colunas originais: {list(df.columns)}")
     
-    # Renomear colunas principais
+    # Renomear colunas de texto livre
     column_mapping = {
         'definition.description': 'descrição',
-        'definition.solution': 'solução',
+        'definition.solution':    'solução',
     }
     
-    # Verificar quais colunas existem
     for old_col, new_col in column_mapping.items():
         if old_col in df.columns:
             print(f"  Renomeando: {old_col} -> {new_col}")
@@ -40,44 +42,41 @@ def preprocess_dataset(input_path: str, output_path: str) -> pd.DataFrame:
     
     df = df.rename(columns=column_mapping)
     
-    # Manter apenas colunas relevantes para o MECAL
-    # (descrição e solução são obrigatórias, outras são opcionais para contexto)
-    essential_cols = ['descrição', 'solução']
-    optional_cols = [
-        'definition.name',
-        'definition.cve', 
-        'definition.cvss3.base_score',
-        'definition.cvss2.base_score',
-        'definition.severity',
-        'definition.family',
-    ]
-    
-    # Selecionar colunas que existem
-    cols_to_keep = [c for c in essential_cols if c in df.columns]
-    cols_to_keep += [c for c in optional_cols if c in df.columns]
-    
-    if len(cols_to_keep) > 0:
-        df = df[cols_to_keep]
-        print(f"Colunas mantidas: {cols_to_keep}")
+    # Remover prefixo de colunas que ainda contêm "." (ex: asset.host_name -> host_name).
+    # Aplica-se a qualquer coluna remanescente com ponto — generalizado para qualquer schema.
+    dot_rename = {
+        col: col.rsplit(".", 1)[-1]
+        for col in df.columns
+        if "." in col
+    }
+    if dot_rename:
+        for old, new in dot_rename.items():
+            print(f"  Simplificando: {old} -> {new}")
+        df = df.rename(columns=dot_rename)
     
     # Remover linhas com valores nulos nas colunas essenciais
+    essential_cols = [c for c in ['descrição', 'solução'] if c in df.columns]
     original_len = len(df)
-    df = df.dropna(subset=[c for c in essential_cols if c in df.columns])
-    print(f"Removidas {original_len - len(df)} linhas com valores nulos")
+    df = df.dropna(subset=essential_cols)
+    removed = original_len - len(df)
+    if removed > 0:
+        print(f"Removidas {removed} linhas com valores nulos")
     
     print(f"Shape final: {df.shape}")
+    print(f"Colunas finais: {list(df.columns)}")
     
-    # Salvar
     df.to_csv(output_path, index=False)
     print(f"Dataset salvo em: {output_path}")
     
     return df
 
 
+
+
 if __name__ == "__main__":
     this_dir = os.path.dirname(os.path.abspath(__file__))
     
-    input_path = os.path.join(this_dir, "datasets", "dataset_original.csv")
-    output_path = os.path.join(this_dir, "datasets", "preprocessed.csv")
+    input_path = os.path.join(this_dir, "dataset", "dataset_original.csv")
+    output_path = os.path.join(this_dir, "dataset", "preprocessed.csv")
     
     preprocess_dataset(input_path, output_path)

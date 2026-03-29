@@ -1,0 +1,26 @@
+# Ignorado pelo .gitignore
+datasets/
+dataset/
+generate_synthetic_openvas/
+clustering/
+kde/
+docs_locais/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Resultados gerados (opcionais no build)
+computational_cost/results/
+privacy_parameters/results/
+
+# Misc
+.git/
+*.md
