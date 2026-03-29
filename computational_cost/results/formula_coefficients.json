@@ -1,0 +1,125 @@
+{
+  "formula": {
+    "expression": "T_MECAL(n,k) = alpha_embed*n + beta_embed + alpha_kmeans*n*k + gamma_kmeans + mu_llm*k",
+    "factored": "T_MECAL(n,k) = (alpha_embed + alpha_kmeans*k)*n + mu_llm*k + (beta_embed+gamma_kmeans)",
+    "units": "seconds",
+    "variables": {
+      "n": "number of records",
+      "k": "number of clusters"
+    },
+    "complexity_note": "KMeans term O(n*k) reflects standard complexity O(n*k*d*i) with fixed embedding dimension d and iterations i",
+    "k_ref_used": 30
+  },
+  "coefficients": {
+    "per_column": {
+      "descrição": {
+        "embedding": {
+          "alpha": 0.00033311765522202184,
+          "alpha_unc95": 3.4751872783907486e-06,
+          "beta": 0.1767473258146457,
+          "beta_unc95": 0.03500769742446415,
+          "r2": 0.9999677636241737
+        },
+        "kmeans": {
+          "alpha": 3.827697261804632e-06,
+          "alpha_unc95": 1.1441301615896544e-06,
+          "gamma": -0.08335006463668049,
+          "gamma_unc95": 0.34576579017935427,
+          "r2": 0.9742171708310704
+        },
+        "llm": {
+          "mu_per_cluster": 1.009323940000013,
+          "mu_unc95": 0.06299984909519596
+        }
+      },
+      "solução": {
+        "embedding": {
+          "alpha": 0.00022875382238953597,
+          "alpha_unc95": 2.140812031031988e-06,
+          "beta": 0.14321048581770324,
+          "beta_unc95": 0.021565715405048626,
+          "r2": 0.9999740577182162
+        },
+        "kmeans": {
+          "alpha": 3.043097030862302e-06,
+          "alpha_unc95": 2.1469983199495958e-07,
+          "gamma": -0.005049239774335912,
+          "gamma_unc95": 0.0648841010868628,
+          "r2": 0.9985277179461015
+        },
+        "llm": {
+          "mu_per_cluster": 0.8995293400000037,
+          "mu_unc95": 0.05565082216531947
+        }
+      }
+    },
+    "combined": {
+      "alpha_embed_s_per_record": 0.0005618714776115578,
+      "alpha_embed_unc95": 4.081666665971169e-06,
+      "beta_embed_s": 0.31995781163234893,
+      "beta_embed_unc95": 0.04111713705858404,
+      "alpha_kmeans_s_per_record_cluster": 6.870794292666935e-06,
+      "alpha_kmeans_unc95": 1.1641004443422537e-06,
+      "gamma_kmeans_s": -0.0883993044110164,
+      "gamma_kmeans_unc95": 0.3518009781569737,
+      "mu_llm_s_per_cluster": 1.9088532800000166,
+      "mu_llm_unc95": 0.11865067126051532,
+      "constant_s": 0.23155850722133253,
+      "constant_unc95": 0.39291811521555775
+    }
+  },
+  "validation_k30": {
+    "3037": {
+      "t_real": 59.8969,
+      "t_pred": 59.8296,
+      "error_pct": -0.112
+    },
+    "6074": {
+      "t_real": 62.15,
+      "t_pred": 62.162,
+      "error_pct": 0.019
+    },
+    "9112": {
+      "t_real": 64.4267,
+      "t_pred": 64.4951,
+      "error_pct": 0.106
+    },
+    "12149": {
+      "t_real": 66.7308,
+      "t_pred": 66.8275,
+      "error_pct": 0.145
+    },
+    "15187": {
+      "t_real": 69.2704,
+      "t_pred": 69.1607,
+      "error_pct": -0.158
+    }
+  },
+  "example_predictions_s": {
+    "n=5000,k=10": 22.47,
+    "n=5000,k=20": 41.91,
+    "n=5000,k=30": 61.34,
+    "n=5000,k=50": 100.2,
+    "n=5000,k=100": 197.36,
+    "n=15000,k=10": 28.78,
+    "n=15000,k=20": 48.9,
+    "n=15000,k=30": 69.02,
+    "n=15000,k=50": 109.26,
+    "n=15000,k=100": 209.85,
+    "n=30000,k=10": 38.24,
+    "n=30000,k=20": 59.39,
+    "n=30000,k=30": 80.54,
+    "n=30000,k=50": 122.84,
+    "n=30000,k=100": 228.59,
+    "n=60000,k=10": 57.15,
+    "n=60000,k=20": 80.37,
+    "n=60000,k=30": 103.58,
+    "n=60000,k=50": 150.0,
+    "n=60000,k=100": 266.05,
+    "n=100000,k=10": 82.38,
+    "n=100000,k=20": 108.34,
+    "n=100000,k=30": 134.3,
+    "n=100000,k=50": 186.22,
+    "n=100000,k=100": 316.01
+  }
+}
