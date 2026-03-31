@@ -138,7 +138,7 @@ Não há riscos relevantes para os revisores.
 
 ## Opção 1: Docker (recomendado)
 
-O `docker-compose.yml` gerencia apenas o container MECAL. O Ollama roda nativamente no host e é acessado pelo container via `host.docker.internal:11434`. Essa arquitetura evita a necessidade do NVIDIA Container Toolkit: o Ollama usa a GPU do host diretamente, enquanto os embeddings rodam com CPU no container.
+O `docker-compose.yml` gerencia apenas o container MECAL. O Ollama roda nativamente no host e é acessado pelo container via `host.docker.internal:11434`. Essa arquitetura evita a necessidade do NVIDIA Container Toolkit: o Ollama usa a GPU do host diretamente, enquanto os embeddings rodam com CPU no container. Note que os experimentos de custo computacional foram utilizados totalmente em GPU, incluindo embeddings. Portanto, para reproduzir estes experimentos especificamente, é recomendado utilizar a opção descrita na seção "**Execução com GPU Completa (opcional)**".
 
 ### Pré-requisitos
 
