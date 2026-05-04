@@ -23,7 +23,7 @@
 ## Estrutura do Repositório
 
 ```
-MECAL_module/
+MECAL/
 ├── dataset/                             # Não versionado — montar como volume no Docker
 │   ├── dataset_original.csv             # Input: dataset OpenVAS original
 │   ├── preprocessed.csv                 # Gerado por preprocessing.py
@@ -154,7 +154,7 @@ ollama pull llama3.1
 
 ```bash
 git clone <URL_DO_REPOSITÓRIO>
-cd MECAL_module
+cd MECAL
 ```
 
 4. **Linux apenas:** descomente a seção `extra_hosts` no `docker-compose.yml`:
