@@ -143,10 +143,15 @@ O `docker-compose.yml` gerencia apenas o container MECAL. O Ollama roda nativame
 ### Pré-requisitos
 
 1. Instalar o [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-2. Instalar o [Ollama](https://ollama.com) e iniciá-lo:
+2. Instalar o [Ollama](https://ollama.com) e iniciá-lo (o container acessa o Ollama via `host.docker.internal`, por isso é necessário escutar em todas as interfaces):
 
 ```bash
-ollama serve          # em um terminal separado
+# Windows (em um terminal separado):
+set OLLAMA_HOST=0.0.0.0:11434 && ollama serve
+
+# Linux/macOS (em um terminal separado):
+OLLAMA_HOST=0.0.0.0:11434 ollama serve
+
 ollama pull llama3.1
 ```
 
@@ -178,8 +183,12 @@ docker compose up --build
 # Instalar dependências
 pip install -r requirements.txt
 
-# Iniciar Ollama
-ollama serve          # em um terminal separado
+# Iniciar Ollama (em um terminal separado)
+# Windows:
+set OLLAMA_HOST=0.0.0.0:11434 && ollama serve
+# Linux/macOS:
+OLLAMA_HOST=0.0.0.0:11434 ollama serve
+
 ollama pull llama3.1
 
 # Executar

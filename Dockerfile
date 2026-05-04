@@ -20,7 +20,7 @@ COPY computational_cost/ computational_cost/
 # Diretório para o dataset (montado como volume)
 RUN mkdir -p dataset
 
-# URL base do Ollama — sobrescrita pelo docker-compose para http://ollama:11434
+# URL base do Ollama — sobrescrita pelo docker-compose para http://host.docker.internal:11434
 ENV OLLAMA_HOST=http://localhost:11434
 
 CMD ["python", "MECAL.py"]
